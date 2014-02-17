@@ -61,7 +61,7 @@ function hostens_greg_preprocess_page(&$vars) {
             
             $vars['gk_accueil'][] = $section;
         }
-    }
+    }gregregr
 }
 
 
