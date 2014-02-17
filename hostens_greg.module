@@ -1,0 +1,81 @@
+<?php
+
+
+/* ADMINISTRATION */
+function hostens_greg_menu() {
+  $items = array();
+  $items['admin/config/hostens_greg'] = array(
+    'title' => 'Configuration des développements personnalisés par GK',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('hostens_greg_admin'),
+    'access arguments' => array('administer Hostens GK settings'),
+    'file' => 'hostens_greg.admin.inc',      
+   );
+  return $items;
+}
+
+function hostens_greg_permission() {
+  return array(
+    'administer Hostens GK settings' => array(
+      'title' => t('Administrer le module GK'),
+    ),
+  );    
+}
+
+/* PAGE D ACCUEIL */
+function hostens_greg_preprocess_page(&$vars) {
+    if($vars['is_front']) {
+        /* Noeud accueil */
+        $a = node_load(variable_get('hostens_greg_accueil_' . $vars['language']->language));
+        $sections = $a->field_home_collection['und'];
+        $vars['gk_accueil'] = array();
+        foreach($sections as $d => $fc_id) {
+            $section = field_collection_item_load($fc_id);
+            
+            // Le(s) noeud(s) référencé(s)
+            if(!empty($section->field_home_fc_ref['und'])) {
+                foreach($section->field_home_fc_ref['und'] as $d_section => $nid) {
+                    $node = node_load(intval($nid['nid']));
+                    
+                    // une fois qu'ils sont chargés, s'ils ont une image, on la prépare
+                    if(isset($node->field_diapohaut['und']) && !empty($node->field_diapohaut['und'])) {
+                        foreach($node->field_diapohaut['und'] as $d_img => $img) {
+                            switch($node->type) {
+                                
+                                // Si c'est une page intérieure, on le met au style 'home_contenus'
+                                case 'interieur':
+                                    $node->field_diapohaut['und'][$d_img]['url_home_contenus'] = image_style_url('home_contenus', $img['uri']);
+                                    break;
+                                
+                            }
+                        }
+                    }
+                    
+                    $section->field_home_fc_ref['und'][$d_section] = $node;
+                }
+            }
+            // L'image précédente
+            if(isset($section->field_home_fc_image['und'])) {
+                $section->field_home_fc_image['und'][0]['url_home_intros'] = image_style_url('home_intros', $section->field_home_fc_image['und'][0]['uri']);
+            }
+            
+            $vars['gk_accueil'][] = $section;
+        }
+    }
+}
+
+
+/* Formulaire fonctionnalités pour le contenu accueil */
+function hostens_greg_form_alter(&$form, &$form_state, $form_id) {
+    if($form_id == 'page_d_accueil_node_form') {
+        
+        // Rajouter les fonctionnalités si l'on ne veut pas spécifier de contenus
+        $options = explode(', ', variable_get('hostens_greg_accueil_fonctionnalites'));
+        array_unshift($options, NULL);
+        $options = drupal_map_assoc($options);
+        foreach($form['field_home_collection']['und'] as $d => $fc) {
+            if(is_integer($d))
+                $form['field_home_collection']['und'][$d]['field_home_fc_fonc']['und']['#options'] = $options;
+        }
+    }
+}

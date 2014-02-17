@@ -1,0 +1,9 @@
+name = Hostens Greg
+description = Toutes les fonctionnalités développées personnellement pour le site Hostens-Picant 2014
+core = 7.x
+version = 7.x-1.0
+
+files[] = hostens_greg.module
+files[] = hostens_greg.admin.inc
+
+configure = admin/config/hostens_greg
